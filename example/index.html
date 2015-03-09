@@ -1,0 +1,60 @@
+<!DOCTYPE HTML>
+<html>
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta http-equiv="Cache-Control" content="no-cache">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,minimum-scale=1.0,user-scalable=no">
+    <title>
+        Ocean.js Power By U.E.M.
+    </title>
+    <link rel="stylesheet" type="text/css" href="css/index.css">
+</head>
+
+<body>
+    <header>
+        <h1>Ocean.js <span>Power By U.E.M. Team</span></h1>
+    </header>
+    <section class="body">
+        <section class="example" o-model="DataBind">
+            <b>Data bind test:</b>
+            <p>
+                input a:
+                <input type="text" o-value="a" />
+            </p>
+            <p>
+                input b:
+                <input type="text" o-value="b" />
+            </p>
+            <p>
+                output a:
+                <span o-value="a"></span>
+            </p>
+            <p>
+                output b:
+                <span o-value="b"></span>
+            </p>
+        </section>
+        <section class="example" o-model="EventBind">
+            <b>Event bind test:</b>
+            <p>
+                <button o-click="sayHello">say hello</button>
+            </p>
+        </section>
+        <section class="example" o-model="Visible">
+            <b>Visible test:</b>
+            <div class="div-ocean" o-show="isShow">
+            </div>
+            <p>
+                <button o-click="switchStatus" o-value="status"></button>
+            </p>
+        </section>
+    </section>
+    <script type="text/javascript" src="js/ocean.js"></script>
+    <!-- // <script type="text/javascript" src="js/example_script/module.js"></script> -->
+    <script type="text/javascript" src="js/example_script/data_bind.js"></script>
+    <script type="text/javascript" src="js/example_script/event_bind.js"></script>
+    <script type="text/javascript" src="js/example_script/visible.js"></script>
+</body>
+
+</html>
