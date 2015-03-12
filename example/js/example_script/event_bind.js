@@ -1,10 +1,13 @@
 'use strict';
 
-ocean.define('EventBind', [], function () {
-
-    return function () {
-        this.sayHello = function () {
-        	alert('hello');
-        };
-    };
+ocean.component({
+    name: 'event-bind',
+    data: {
+    	count: 0
+    },
+    methods: {
+    	sayHello: function (msg) {
+    		alert(msg + ':' + (++this.$data.count));
+    	}
+    }
 });

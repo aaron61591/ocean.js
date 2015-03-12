@@ -16,14 +16,14 @@
         <h1>Ocean.js <span>Power By U.E.M. Team</span></h1>
     </header>
     <section class="body">
-        <section class="example" o-model="DataBind">
-            <b>Data bind test:</b>
+        <o-data-bind class="example">
+            <b>Data Bind Example:</b>
             <p>
-                input a:
+                a:
                 <input type="text" o-value="a" />
             </p>
             <p>
-                input b:
+                b:
                 <input type="text" o-value="b" />
             </p>
             <p>
@@ -31,30 +31,68 @@
                 <span o-value="a"></span>
             </p>
             <p>
-                output b:
-                <span o-value="b"></span>
+                output a + b:
+                <span o-value="add(a, b)"></span>
             </p>
-        </section>
-        <section class="example" o-model="EventBind">
-            <b>Event bind test:</b>
+        </o-data-bind>
+        <o-style class="example">
+            <b>Style Example:</b>
             <p>
-                <button o-click="sayHello">say hello</button>
+                width:
+                <button type="text" o-click="adjust('sub', 'width')">-</button>
+                <button type="text" o-click="adjust('plus', 'width')">+</button>
             </p>
-        </section>
-        <section class="example" o-model="Visible">
-            <b>Visible test:</b>
-            <div class="div-ocean" o-show="isShow">
-            </div>
             <p>
-                <button o-click="switchStatus" o-value="status"></button>
+                height:
+                <button type="text" o-click="adjust('sub', 'height')">-</button>
+                <button type="text" o-click="adjust('plus', 'height')">+</button>
             </p>
-        </section>
+            <div class="div-blue" o-style="width: width / 10 + 'px', height: height + 'px'"></div>
+        </o-style>
+        <o-attr class="example">
+            <b>Attribute Example:</b>
+            <p>
+                <img o-attr="src: 'images/' + src + '.png'" o-click="switchStatus()">
+            </p>
+            <p o-value="src"></p>
+        </o-attr>
+        <o-class class="example">
+            <b>Class Example:</b>
+            <p>
+                <button o-click="black()">black</button>
+                <button o-click="green()">green</button>
+            </p>
+            <div class="div-green" o-class="div-black: isBlack, div-green: isGreen"></div>
+        </o-class>
+        <o-show class="example">
+            <b>Show Example:</b>
+            <p>
+                <button o-click="switchStatus()">show block</button>
+            </p>
+            <div class="div-black" o-show="isShow"></div>
+        </o-show>
+        <o-if class="example">
+            <b>If Example:</b>
+            <p>
+                <button o-click="switchStatus()">if block</button>
+            </p>
+            <div class="div-black" o-if="isShow"></div>
+        </o-if>
+        <o-event-bind class="example">
+            <b>Event Bind Example:</b>
+            <p>
+                <button o-click="sayHello('hello world')">say hello</button>
+            </p>
+        </o-event-bind>
     </section>
     <script type="text/javascript" src="js/ocean.js"></script>
-    <!-- // <script type="text/javascript" src="js/example_script/module.js"></script> -->
     <script type="text/javascript" src="js/example_script/data_bind.js"></script>
+    <script type="text/javascript" src="js/example_script/style.js"></script>
+    <script type="text/javascript" src="js/example_script/attribute.js"></script>
+    <script type="text/javascript" src="js/example_script/class.js"></script>
+    <script type="text/javascript" src="js/example_script/show.js"></script>
+    <script type="text/javascript" src="js/example_script/if.js"></script>
     <script type="text/javascript" src="js/example_script/event_bind.js"></script>
-    <script type="text/javascript" src="js/example_script/visible.js"></script>
 </body>
 
 </html>

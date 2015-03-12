@@ -23,10 +23,29 @@ header h1 span {
 .example {
     border-bottom: 1px solid #ccc;
     margin-bottom: 20px;
+    display: block;
 }
-.div-ocean {
+.div-black {
+    transition: all 0.5s ease;
+    -webkit-transition: all 0.5s ease;
     width: 150px;
     height: 50px;
     background: #3B3738;
-    color: #fff;
+    margin-bottom: 10px;
+}
+.div-green {
+    transition: all 0.5s ease;
+    -webkit-transition: all 0.5s ease;
+    width: 150px;
+    height: 50px;
+    background: #34A83B;
+    margin-bottom: 10px;
+}
+.div-blue {
+    transition: all 0.5s ease;
+    -webkit-transition: all 0.5s ease;
+    width: 150px;
+    height: 50px;
+    background: #78b6c7;
+    margin-bottom: 10px;
 }
