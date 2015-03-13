@@ -8,9 +8,6 @@ ocean.component({
     methods: {
         switchStatus: function () {
             this.$data.isShow = !this.$data.isShow;
-        },
-        isShow: function (isShow) {
-            return isShow;
         }
     }
 });

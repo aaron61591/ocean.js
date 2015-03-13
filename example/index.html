@@ -27,12 +27,8 @@
                 <input type="text" o-value="b" />
             </p>
             <p>
-                output a:
-                <span o-value="a"></span>
-            </p>
-            <p>
                 output a + b:
-                <span o-value="add(a, b)"></span>
+                <span o-text="add(a, b)"></span>
             </p>
         </o-data-bind>
         <o-style class="example">
@@ -47,14 +43,13 @@
                 <button type="text" o-click="adjust('sub', 'height')">-</button>
                 <button type="text" o-click="adjust('plus', 'height')">+</button>
             </p>
-            <div class="div-blue" o-style="width: width / 10 + 'px', height: height + 'px'"></div>
+            <div class="div-blue" o-style="width: width * 50 + 'px', height: height * 50 + 'px'"></div>
         </o-style>
         <o-attr class="example">
             <b>Attribute Example:</b>
             <p>
                 <img o-attr="src: 'images/' + src + '.png'" o-click="switchStatus()">
             </p>
-            <p o-value="src"></p>
         </o-attr>
         <o-class class="example">
             <b>Class Example:</b>

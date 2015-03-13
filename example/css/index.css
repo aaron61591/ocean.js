@@ -44,7 +44,7 @@ header h1 span {
 .div-blue {
     transition: all 0.5s ease;
     -webkit-transition: all 0.5s ease;
-    width: 150px;
+    width: 0px;
     height: 50px;
     background: #78b6c7;
     margin-bottom: 10px;

@@ -2,7 +2,10 @@
 
 (function () {
     var oceanPrefix = 'o-',
-        keyCodeIgnore = [16, 17, 37, 38, 39, 40, 91]; // shift, ctl, left, up, right, down, cmd
+        keyCodeIgnored = [16, 17, 37, 38, 39, 40, 91], // shift, ctl, left, up, right, down, cmd
+        varsIgnored = ['true', 'false', 'undefined', 'null', 'NaN'],
+        isDebug = false;
+
 
     /*
      * ocean vm definition
@@ -30,8 +33,19 @@
 
         _checkOption: function (option) {
 
+            var pro;
+
             if (!option.name && !option.name.trim().length) {
                 throw new ErrorOptionInvalid();
+            }
+
+            if (option.data && option.methods) {
+                for (pro in option.data) {
+
+                    if (option.methods[pro]) {
+                        throw new ErrorNameConflict(option, pro);
+                    }
+                }
             }
         },
 
@@ -75,8 +89,9 @@
         },
 
         log: function (msg) {
-
-            console.log(msg);
+            if (isDebug) {
+                console.log(msg);
+            }
         },
     };
 
@@ -102,7 +117,9 @@
         }
 
         for (i = element.children.length - 1; i >= 0; i--) {
-            parseElement(element.children[i], vm);
+            if (element.children[i].tagName.toLowerCase().indexOf(oceanPrefix) === -1) {
+                parseElement(element.children[i], vm);
+            }
         }
     }
 
@@ -115,6 +132,9 @@
                 switch (type) {
                 case 'value':
                     bindValue(element, attr.value, vm);
+                    break;
+                case 'text':
+                    bindText(element, attr.value, vm);
                     break;
                 case 'click':
                     bindClick(element, attr.value, vm);
@@ -143,60 +163,49 @@
 
         ocean.log('binding value:' + key);
 
-        var methodName = getMethodName(key);
+        element.onkeyup = function (e) {
 
-        if (!getMethod(vm, methodName)) {
-            vm._watch(key, function (value) {
+            if (keyCodeIgnored.indexOf(e.keyCode) === -1) {
+                vm.$data[key] = getValue(element.value);
+            }
+        };
 
-                updateViewValue(value);
-            });
+        element.onpaste = function () {
 
-            element.onkeyup = function (e) {
+            vm.$data[key] = getValue(element.value);
+        };
 
-                if (keyCodeIgnore.indexOf(e.keyCode) === -1) {
-                    vm.$data[key] = element.value;
-                }
-            };
-
-            element.onpaste = function () {
-
-                vm.$data[key] = element.value;
-            };
-
-            updateViewValue(vm.$data[key]);
-        } else {
-            var args = getArgs(key);
-            args.map(function (arg) {
-
-                if (!getArg(arg)) {
-                    vm._watch(arg, function () {
-
-                        updateViewValueByMethod(args);
-                    });
-                }
-            });
-
-            updateViewValueByMethod(args);
-        }
-
-        function updateViewValueByMethod(args) {
-
-            updateViewValue(vm.$methods[methodName].apply(vm, args.map(function (arg) {
-                if (!getArg(arg)) {
-                    return vm.$data[arg];
-                } else {
-                    return getArg(arg);
-                }
-            })));
-        }
+        updateViewValue(vm.$data[key]);
 
         function updateViewValue(value) {
 
-            if (element.tagName === 'INPUT') {
-                element.value = value;
-            } else {
-                element.innerText = value;
-            }
+            element.value = value;
+        }
+
+        function getValue(value) {
+            var m = matchNumber(value);
+            m = m && m[1];
+            return m ? parseFloat(m) : value;
+        }
+    }
+
+    function bindText(element, key, vm) {
+
+        ocean.log('binding text:' + key);
+
+        var dependency = [],
+            dependencyMethod = [];
+
+        watchByExpression(vm, key, updateViewTextByExp, null, dependency, dependencyMethod);
+
+        function updateViewTextByExp() {
+
+            updateViewText(calExpression(key, dependency, dependencyMethod, vm));
+        }
+
+        function updateViewText(value) {
+
+            element.innerText = value;
         }
     }
 
@@ -206,23 +215,29 @@
 
         var methodName = getMethodName(key),
             method = getMethod(vm, methodName),
-            args = getArgs(key);
+            args = getArgs(methodName, key);
 
         if (method) {
-            element.addEventListener('click', function () {
-
-                method.apply(vm, args.map(function (arg) {
-
-                    var t = getArg(arg);
-                    if (!t) {
-                        return vm.$data[arg];
-                    } else {
-                        return t;
-                    }
-                }));
-            });
+            if (window.addEventListener) {
+                element.addEventListener('click', clickHandler);
+            } else {
+                element.attachEvent('click', clickHandler);
+            }
         } else {
-            throw new ErrorNoMethod(vm, key);
+            throw new ErrorNoMethod(vm, methodName);
+        }
+
+        function clickHandler() {
+
+            method.apply(vm, args.map(function (arg) {
+
+                var t = getArg(arg);
+                if (!t) {
+                    return vm.$data[arg];
+                } else {
+                    return t;
+                }
+            }));
         }
     }
 
@@ -230,48 +245,14 @@
 
         ocean.log('binding show:' + key);
 
+        var dependency = [],
+            dependencyMethod = [];
 
-        // if (!isMethod(key)) {
-        vm._watch(key, function (value) {
+        watchByExpression(vm, key, updateViewShow, null, dependency, dependencyMethod);
 
-            updateViewShow(value);
-        });
+        function updateViewShow() {
 
-        updateViewShow(vm.$data[key]);
-        // } else {
-
-        //     var methodName = getMethodName(key),
-        //         method = getMethod(vm, methodName),
-        //         args = getArgs(key);
-
-        //     if (method) {
-        //         args.map(function (arg) {
-        //             if (!getArg(arg)) {
-        //                 vm._watch(arg, function () {
-        //                     updateViewIfByMethod(args);
-        //                 });
-        //             }
-        //         });
-        //         updateViewIfByMethod(args);
-        //     } else {
-        //         throw new ErrorNoMethod(vm, key);
-        //     }
-        // }
-
-
-        // function updateViewIfByMethod(args) {
-
-        //     updateViewShow(vm.$methods[methodName].apply(vm, args.map(function (arg) {
-        //         var t = getArg(arg);
-        //         if (!t) {
-        //             return vm.$data[arg];
-        //         } else {
-        //             return t;
-        //         }
-        //     })));
-        // }
-
-        function updateViewShow(value) {
+            var value = calExpression(key, dependency, dependencyMethod, vm);
 
             if (value) {
                 element.style.display = 'block';
@@ -285,59 +266,23 @@
 
         ocean.log('binding if:' + key);
 
-        var parentNode = element.parentNode,
+        var dependency = [],
+            dependencyMethod = [],
+            parentNode = element.parentNode,
             refer = document.createComment('ocean-if');
 
-        // if (!isMethod(key)) {
-        vm._watch(key, function (value) {
-            updateViewIf(value);
-        });
+        watchByExpression(vm, key, updateViewIf, null, dependency, dependencyMethod);
 
-        if (!vm.$data[key]) {
-            updateViewIf(false);
-        }
-        // } else {
+        function updateViewIf() {
 
-        //     var methodName = getMethodName(key),
-        //         method = getMethod(vm, methodName),
-        //         args = getArgs(key);
+            var value = calExpression(key, dependency, dependencyMethod, vm);
 
-        //     if (method) {
-        //         args.map(function (arg) {
-        //             if (!getArg(arg)) {
-        //                 vm._watch(arg, function () {
-        //                     updateViewIf(updateViewIfByMethod(args));
-        //                 });
-        //             }
-        //         });
-        //         if (!updateViewIfByMethod(args)) {
-        //             updateViewIf(false);
-        //         }
-        //     } else {
-        //         throw new ErrorNoMethod(vm, key);
-        //     }
-        // }
-
-        // function updateViewIfByMethod(args) {
-
-        //     return vm.$methods[methodName].apply(vm, args.map(function (arg) {
-        //         var t = getArg(arg);
-        //         if (!t) {
-        //             return vm.$data[arg];
-        //         } else {
-        //             return t;
-        //         }
-        //     }));
-        // }
-
-        function updateViewIf(value) {
-
-            if (value) {
+            if (value && !element.parentNode) {
                 parentNode.insertBefore(element, refer);
                 parentNode.removeChild(refer);
-            } else {
+            } else if (!value && element.parentNode) {
                 parentNode.insertBefore(refer, element);
-                parentNode.removeChild(element);
+                element = parentNode.removeChild(element);
             }
         }
     }
@@ -346,19 +291,15 @@
 
         ocean.log('binding class:' + key);
 
-        var classPair = getKeyPair(key);
+        var keyPair = getKeyPair(key),
+            dependency = [],
+            dependencyMethod = [];
 
-        classPair.map(function (pair) {
+        watchPairByExpression(vm, keyPair, dependency, dependencyMethod, updateViewClass);
 
-            vm._watch(pair.expression, function (value) {
+        function updateViewClass(pair) {
 
-                updateViewClass(value, pair);
-            });
-
-            updateViewClass(vm.$data[pair.expression], pair);
-        });
-
-        function updateViewClass(value, pair) {
+            var value = calExpression(pair.expression, dependency, dependencyMethod, vm);
 
             if (value && !reg(pair.props).test(element.className)) {
                 if (element.className === '') {
@@ -372,6 +313,7 @@
         }
 
         function reg(className) {
+
             return new RegExp('^' + className + '\\s+|\\s+' + className + '\\s+|\\s+' + className + '$|^' + className + '$');
         }
     }
@@ -381,13 +323,14 @@
         ocean.log('binding style:' + key);
 
         var keyPair = getKeyPair(key),
-            args = [];
+            dependency = [],
+            dependencyMethod = [];
 
-        watchByPair(vm, keyPair, args, updateViewClass);
+        watchPairByExpression(vm, keyPair, dependency, dependencyMethod, updateViewStyle);
 
-        function updateViewClass(pair) {
+        function updateViewStyle(pair) {
 
-            element.style[pair.props] = calExpression(pair.expression, args, vm);
+            element.style[pair.props] = calExpression(pair.expression, dependency, dependencyMethod, vm);
         }
 
     }
@@ -397,20 +340,16 @@
         ocean.log('binding attribute:' + key);
 
         var keyPair = getKeyPair(key),
-            args = [];
+            dependency = [],
+            dependencyMethod = [];
 
-        watchByPair(vm, keyPair, args, updateViewAttr);
+        watchPairByExpression(vm, keyPair, dependency, dependencyMethod, updateViewAttr);
 
         function updateViewAttr(pair) {
 
-            element.setAttribute(pair.props, calExpression(pair.expression, args, vm));
+            element.setAttribute(pair.props, calExpression(pair.expression, dependency, dependencyMethod, vm));
         }
     }
-
-    // function isMethod(key) {
-
-    //     return new RegExp(/\([^\)]*\)/).test(key);
-    // }
 
     function getMethodName(key) {
 
@@ -422,9 +361,10 @@
         return vm.$methods[methodName];
     }
 
-    function getArgs(key) {
+    function getArgs(methodName, key) {
 
-        var m = key.match(/\(([^\)]*)\)/);
+        var m = key.match(getMethodReg(methodName));
+
         if (m) {
             m = m[1].split(',').map(function (arg) {
                 return arg.trim();
@@ -435,11 +375,21 @@
         }
     }
 
+    function getMethodReg(methodName) {
+
+        return new RegExp(methodName + '\\(([^\\)]*)\\)');
+    }
+
     function getArg(arg) {
 
-        var m = arg.match(/^'([^']*)'$/) || arg.match(/^(\d+)$/) || arg.match(/^(\d+.\d+)$/);
+        var m = arg.match(/^'([^']*)'$/) || matchNumber(arg);
         m = m && m[1];
         return m;
+    }
+
+    function matchNumber(e) {
+
+        return e.match(/^(\d+)$/) || e.match(/^(\d+.\d+)$/);
     }
 
     function getKeyPair(key) {
@@ -461,39 +411,89 @@
         return stylePair;
     }
 
-    function watchByPair(vm, keyPair, args, callback) {
+    function watchPairByExpression(vm, keyPair, dependency, dependencyMethod, callback) {
 
         keyPair.map(function (pair) {
 
-            var t = pair.expression.replace(/'[^']*'/g, ''),
-                vars = t.match(/([\d\w]+)/g);
-
-            if (vars) {
-                vars.map(function (e) {
-
-                    vm._watch(e, function () {
-
-                        callback(pair);
-                    });
-                    args.push(e);
-                });
-            }
-
-            callback(pair);
+            watchByExpression(vm, pair.expression, callback, pair, dependency, dependencyMethod);
         });
     }
 
-    function calExpression(expression, args, vm) {
+    function watchByExpression(vm, expression, callback, callbackArgs, dependency, dependencyMethod) {
 
-        for (var i = 0; i < args.length; ++i) {
-            if (typeof vm.$data[args[i]] === 'string') {
-                expression = expression.replace(args[i], '\'' + vm.$data[args[i]] + '\'');
+        var t = expression.replace(/'[^']*'/g, ''),
+            vars = t.match(/[A-Za-z_\$][\w]*(\([^\)]*\)){0,1}/g);
+
+        if (vars) {
+            vars.map(function (e) {
+
+                var methodName = getMethodName(e);
+
+                if (varsIgnored.indexOf(e) === -1) {
+                    if (!getMethod(vm, methodName)) {
+                        vm._watch(e, function () {
+
+                            callback(callbackArgs);
+                        });
+
+                        dependency.push(e);
+                    } else {
+                        var args = getArgs(methodName, e);
+
+                        args.map(function (arg) {
+
+                            if (!getArg(arg)) {
+                                vm._watch(arg, function () {
+
+                                    callback(callbackArgs);
+                                });
+                            }
+                        });
+
+                        dependencyMethod.push(methodName);
+                    }
+                }
+            });
+        }
+
+        callback(callbackArgs);
+    }
+
+    function calExpression(expression, dependency, dependencyMethod, vm) {
+
+        var i;
+
+        for (i = 0; i < dependencyMethod.length; ++i) {
+            var res = getDependMethodRes(dependencyMethod[i]);
+            expression = expression.replace(getMethodReg(dependencyMethod[i]), res);
+        }
+
+        for (i = 0; i < dependency.length; ++i) {
+            if (typeof vm.$data[dependency[i]] === 'string') {
+                expression = expression.replace(getDependReg(dependency[i]), '\'' + vm.$data[dependency[i]] + '\'');
             } else {
-                expression = expression.replace(args[i], vm.$data[args[i]]);
+                expression = expression.replace(getDependReg(dependency[i]), vm.$data[dependency[i]]);
             }
         }
-        /*jslint evil: true */
+
+        /* jslint evil: true */
         return eval(expression);
+
+        function getDependMethodRes(dependencyMethod) {
+
+            return vm.$methods[dependencyMethod].apply(vm, getArgs(dependencyMethod, expression).map(function (arg) {
+                if (!getArg(arg)) {
+                    return vm.$data[arg];
+                } else {
+                    return getArg(arg);
+                }
+            }));
+        }
+
+        function getDependReg(dependName) {
+            var b = '[^\\w\\$]';
+            return new RegExp('^' + dependName + b + '|' + b + dependName + b + '|' + b + dependName + '$|^' + dependName + '$');
+        }
     }
 
     var ErrorOptionInvalid = function () {
@@ -504,11 +504,16 @@
 
             this.message = '[oceanjs]: method named \'' + key + '\' is not defined in component \'' + vm.$name + '\'';
         },
+        ErrorNameConflict = function (option, key) {
+
+            this.message = '[oceanjs]: method name \'' + key + '\' is conflict in component \'' + option.name + '\'';
+        },
         errorToString = function () {
 
             return this.message;
         };
 
     ErrorOptionInvalid.prototype.toString =
-        ErrorNoMethod.prototype.toString = errorToString;
+        ErrorNoMethod.prototype.toString =
+        ErrorNameConflict.prototype.toString = errorToString;
 })();
