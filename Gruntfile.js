@@ -37,6 +37,22 @@ module.exports = function (grunt) {
                     spawn: false
                 }
             },
+            src: {
+                files: [
+                    'src/**/*',
+                ],
+                tasks: [
+                    'build'
+                ]
+            },
+            dist: {
+                files: [
+                    'dist/*',
+                ],
+                options: {
+                    livereload: true
+                }
+            },
             example: {
                 files: [
                     'example/**/*',
@@ -52,6 +68,12 @@ module.exports = function (grunt) {
     grunt.loadNpmTasks('grunt-contrib-watch');
     grunt.loadNpmTasks('grunt-express-server');
 
+
+    // load custom tasks
+    grunt.file.recurse('tasks', function (path) {
+        require('./' + path)(grunt);
+    });
+
     // grunt.registerTask('default', ['jshint', 'express:dev', 'watch']);
-    grunt.registerTask('default', ['express:dev', 'watch']);
+    grunt.registerTask('dev', ['build', 'express:dev', 'watch']);
 };

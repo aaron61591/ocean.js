@@ -1,3 +1,9 @@
+/*
+ Ocean.js v0.1.0
+ (c) 2015 Aaron Peng
+ License: MIT
+*/
+
 'use strict';
 
 (function () {
@@ -16,22 +22,34 @@
         this.$name = {};
         this.$data = {};
         this.$methods = {};
-        this._watchers = [];
-        this._initial(option);
+        this.$watchers = [];
+        this.$initial(option);
     };
 
     Vm.prototype = {
 
-        _initial: function (option) {
+        $initial: function (option) {
 
-            this._checkOption(option);
+            var prop;
+            this.$checkOption(option);
             this.$option = option;
             this.$name = option.name;
             this.$data = option.data || {};
+            for (prop in this.$data) {
+                if (this.$data.hasOwnProperty(prop)) {
+                    this[prop] = this.$data[prop];
+                }
+            }
             this.$methods = option.methods || {};
+            for (prop in this.$methods) {
+                if (this.$methods.hasOwnProperty(prop)) {
+                    this[prop] = this.$methods[prop];
+                }
+            }
+            this.$ready = option.ready || {};
         },
 
-        _checkOption: function (option) {
+        $checkOption: function (option) {
 
             var pro;
 
@@ -49,12 +67,12 @@
             }
         },
 
-        _watch: function (key, watcher) {
+        $watch: function (key, watcher) {
 
             var that = this;
 
-            if (!this._watchers[key]) {
-                this._watchers[key] = {
+            if (!this.$watchers[key]) {
+                this.$watchers[key] = {
                     value: this.$data[key],
                     list: []
                 };
@@ -63,20 +81,37 @@
 
                     set: function (val) {
 
-                        var oldValue = that._watchers[key].value;
-                        that._watchers[key].value = val;
-                        for (var i = that._watchers[key].list.length - 1; i >= 0; i--) {
-                            that._watchers[key].list[i](val, oldValue);
+                        var oldValue = that.$watchers[key].value;
+                        that.$watchers[key].value = val;
+                        for (var i = that.$watchers[key].list.length - 1; i >= 0; i--) {
+                            that.$watchers[key].list[i](val, oldValue);
                         }
                     },
 
                     get: function () {
 
-                        return that._watchers[key].value;
+                        return that.$watchers[key].value;
+                    }
+                });
+
+                Object.defineProperty(this, key, {
+
+                    set: function (val) {
+
+                        var oldValue = that.$watchers[key].value;
+                        that.$watchers[key].value = val;
+                        for (var i = that.$watchers[key].list.length - 1; i >= 0; i--) {
+                            that.$watchers[key].list[i](val, oldValue);
+                        }
+                    },
+
+                    get: function () {
+
+                        return that.$watchers[key].value;
                     }
                 });
             }
-            this._watchers[key].list.push(watcher);
+            this.$watchers[key].list.push(watcher);
         }
     };
 
@@ -105,7 +140,14 @@
 
             ocean.log('component:' + els[i].tagName);
 
-            parseElement(els[i], new Vm(option));
+            var vm = new Vm(option);
+
+            parseElement(els[i], vm);
+
+            if (vm.$ready && typeof vm.$ready === 'function') {
+                vm.$ready();
+            }
+
             ++i;
         }
     }
@@ -227,9 +269,9 @@
             throw new ErrorNoMethod(vm, methodName);
         }
 
-        function clickHandler() {
+        function clickHandler(e) {
 
-            method.apply(vm, args.map(function (arg) {
+            var argSet = args.map(function (arg) {
 
                 var t = getArg(arg);
                 if (!t) {
@@ -237,7 +279,15 @@
                 } else {
                     return t;
                 }
-            }));
+            });
+
+            if (!argSet) {
+                argSet = [e];
+            } else {
+                argSet.push(e);
+            }
+
+            method.apply(vm, argSet);
         }
     }
 
@@ -364,8 +414,7 @@
     function getArgs(methodName, key) {
 
         var m = key.match(getMethodReg(methodName));
-
-        if (m) {
+        if (m && m[1]) {
             m = m[1].split(',').map(function (arg) {
                 return arg.trim();
             });
@@ -431,7 +480,7 @@
 
                 if (varsIgnored.indexOf(e) === -1) {
                     if (!getMethod(vm, methodName)) {
-                        vm._watch(e, function () {
+                        vm.$watch(e, function () {
 
                             callback(callbackArgs);
                         });
@@ -443,7 +492,7 @@
                         args.map(function (arg) {
 
                             if (!getArg(arg)) {
-                                vm._watch(arg, function () {
+                                vm.$watch(arg, function () {
 
                                     callback(callbackArgs);
                                 });
@@ -463,6 +512,8 @@
 
         var i;
 
+        expression = preParseExpression(expression);
+
         for (i = 0; i < dependencyMethod.length; ++i) {
             var res = getDependMethodRes(dependencyMethod[i]);
             expression = expression.replace(getMethodReg(dependencyMethod[i]), res);
@@ -477,7 +528,24 @@
         }
 
         /* jslint evil: true */
-        return eval(expression);
+        return eval(recoverExp(expression));
+
+        function preParseExpression(expression) {
+
+            var splitArr = ['!', '+', '-', '*', '/', '%', '&&', '||'];
+
+            expression = expression.replace('&&', ' && ');
+            expression = expression.replace('||', ' || ');
+            for (var i = 0; i < expression.length; ++i) {
+                if (splitArr.indexOf(expression[i]) !== -1) {
+                    expression = expression.replace(new RegExp('^(.{' + i + '})'), '$1 ');
+                    ++i;
+                    expression = expression.replace(new RegExp('^(.{' + (i + 1) + '})'), '$1 ');
+                    ++i;
+                }
+            }
+            return expression;
+        }
 
         function getDependMethodRes(dependencyMethod) {
 
@@ -491,8 +559,14 @@
         }
 
         function getDependReg(dependName) {
-            var b = '[^\\w\\$]';
-            return new RegExp('^' + dependName + b + '|' + b + dependName + b + '|' + b + dependName + '$|^' + dependName + '$');
+
+            return new RegExp('\\s' + dependName + '\\s|^' + dependName + '\\s|\\s' + dependName + '$|^' + dependName + '$');
+        }
+
+        // TODO for temporary
+        function recoverExp(expression) {
+
+            return expression.replace(/\s/g, '');
         }
     }
 

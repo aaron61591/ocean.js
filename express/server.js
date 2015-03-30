@@ -15,11 +15,11 @@ app.use(require('connect-inject')({
 }));
 
 // 根目录
-var basePath = process.cwd() + '/example';
+var basePath = process.cwd();
 app.use(express.static(basePath));
 
 app.get('/', function (req, res) {
-    res.sendfile('./index.html');
+    res.sendfile('example/index.html');
 });
 
 var port = process.env.PORT || 4000;
