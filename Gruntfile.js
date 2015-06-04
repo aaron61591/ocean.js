@@ -18,11 +18,9 @@ module.exports = function (grunt) {
             }
         },
         express: {
-            options: {
-                port: 4000
-            },
             dev: {
                 options: {
+                    port: 4000,
                     script: 'express/server.js'
                 }
             }

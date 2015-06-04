@@ -1,19 +1,23 @@
 {
-  "name": "oceanjs",
-  "version": "0.0.1",
-  "description": "Oceanjs Power By U.E.M.",
-  "devDependencies": {
-    "grunt": "~0.4.2",
-    "grunt-contrib-jshint": "~0.6.3",
-    "grunt-contrib-watch": "~0.6.1",
-    "grunt-contrib-copy": "~0.5.0",
-    "grunt-contrib-clean": "~0.5.0",
-    "grunt-bower": "~0.9.1",
-    "grunt-bower-install-simple": "~1.0.3",
-    "grunt-express-server": "~0.4.13",
-    "connect-inject": "~0.3.2"
-  },
-  "dependencies": {
-    "express": "3.x"
-  }
+    "name": "oceanjs",
+    "version": "0.2.0",
+    "description": "Simple, Fast & Composable MVVM for building interative interfaces",
+    "devDependencies": {
+        "grunt": "~0.4.2",
+        "grunt-contrib-jshint": "~0.6.3",
+        "grunt-contrib-watch": "~0.6.1",
+        "grunt-contrib-copy": "~0.5.0",
+        "grunt-contrib-clean": "~0.5.0",
+        "grunt-bower": "~0.9.1",
+        "grunt-bower-install-simple": "~1.0.3",
+        "grunt-express-server": "~0.4.13",
+        "connect-inject": "~0.3.2",
+        "vinyl-fs": "~0.1.4",
+        "uglify-js": "~2.4.13",
+        "gulp-component": "~0.1.8",
+        "map-stream": "0.1.0"
+    },
+    "dependencies": {
+        "express": "3.x"
+    }
 }

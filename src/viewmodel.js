@@ -1,24 +1,44 @@
 'use strict';
 
 var Compiler = require('./compiler'),
-    utils = require('./utils'),
-    def = utils.defProtected;
+    CONF = require('./config');
 
 /**
  * ViewModel class 
  * expose api to user that operate datas
  */
-function ViewModel(options, ele) {
+function ViewModel(opt, ele) {
 
-    this.$compiler = new Compiler(this, options, ele);
+    this.initProps(opt, ele);
 }
 
-ViewModel.getReference = function () {
+var VMProto = ViewModel.prototype;
 
-    // TODO
+/**
+ * Initialize VM properties
+ */
+VMProto.initProps = function (opt, ele) {
+
+    this.$opt = opt;
+    this.$data = opt.data;
+    this.$method = opt.method;
+    this.$compiler = new Compiler(this, opt, ele);
 };
 
+/**
+ * execute viewmodel hook 
+ */
+VMProto.execHook = function (hook) {
 
-var VMProto = ViewModel.prototype;
+    return this.$opt[hook] && this.$opt[hook]();
+};
+
+/**
+ * get vm reference by element
+ */
+ViewModel.getRef = function (ele) {
+
+    return ele.getAttribute(CONF.PREFIX + CONF.DIRECTIVE.REF);
+};
 
 module.exports = ViewModel;

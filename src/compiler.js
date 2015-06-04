@@ -1,6 +1,8 @@
 'use strict';
 
-var Observer = require('./observer'),
+var doc = document,
+    CONF = require('./config'),
+    Monitor = require('./monitor'),
     utils = require('./utils');
 
 /**
@@ -8,27 +10,21 @@ var Observer = require('./observer'),
  * The DOM compiler
  * scan a DOM node and compile bindings for a VM
  */
-function Compiler(vm, options, ele) {
+function Compiler(vm, opt, ele) {
 
-    var compiler = this;
+    this.initProps(vm, opt, ele);
 
-    // set compiler properties
-    compiler.initProps(compiler, vm, options, ele);
+    // before viewmodel compile
+    this.execHook('created');
 
-    // set VM properties
-    compiler.initVmProps(vm, compiler, options);
+    this.renderElement(opt);
 
-    compiler.execHook('created');
+    this.setupMonitor();
 
-    // setup element
-    compiler.setupElement(options);
+    this.compile();
 
-    // setup observer
-    compiler.setupObserver();
-
-    compiler.compile();
-
-    compiler.execHook('ready');
+    // after viewmodel compile
+    this.execHook('ready');
 }
 
 var CompilerProto = Compiler.prototype;
@@ -36,49 +32,59 @@ var CompilerProto = Compiler.prototype;
 /**
  * Initialize compiler properties
  */
-CompilerProto.initProps = function (compiler, vm, options, ele) {
+CompilerProto.initProps = function (vm, opt, ele) {
 
-    compiler.vm = vm;
-    compiler.bindings = {};
-    compiler.observer = {};
-    compiler.ele = ele;
-    compiler.data = options.data;
+    this.vm = vm;
+    this.bindings = {};
+    this.monitor = {};
+    this.ele = ele;
+    this.data = opt.data;
 };
 
 /**
- * Initialize VM properties
+ * render component element to standard
  */
-CompilerProto.initVmProps = function (vm, compiler, options) {
+CompilerProto.renderElement = function () {
 
-    vm.$options = options;
-    vm.$data = options.data;
-    vm.$methods = options.methods;
+    var parent = this.ele.parentNode,
+        cm, e;
+
+    // TODO insert comment
+    cm = doc.createComment(CONF.PREFIX + CONF.CMP_COMMENT);
+    parent.insertBefore(cm, this.ele);
+
+    // TODO create copy standuard dom
+    e = doc.createElement(CONF.CMP_TAGNAME);
+    utils.copyElement(this.ele, e);
+
+    // TODO delete old ele
+    parent.removeChild(this.ele);
+
+    // TODO insert section
+    parent.insertBefore(e, cm);
+
+    // TODO delete comment
+    parent.removeChild(cm);
+
+    this.ele = e;
 };
 
 /**
- * Initialize the VM element
- */
-CompilerProto.setupElement = function (options) {
-
-    // TODO do template job
-};
-
-/**
- * Setup observer.
- * The observer listens for events on all VM
+ * Setup monitor.
+ * The monitor listens for events on all VM
  * values, objects and trigger corresponding binding updates.
  */
-CompilerProto.setupObserver = function () {
+CompilerProto.setupMonitor = function () {
 
-    this.observer = new Observer(this);
+    this.monitor = new Monitor(this);
 };
 
 /**
  * Emit lifecycle events to trigger hooks
  */
-CompilerProto.execHook = function () {
+CompilerProto.execHook = function (hook) {
 
-    // TODO
+    this.vm.execHook(hook);
 };
 
 /**

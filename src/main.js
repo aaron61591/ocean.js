@@ -1,56 +1,67 @@
 'use strict';
 
 var ViewModel = require('./viewmodel'),
+    CONF = require('./config'),
     error = require('./error'),
-    config = require('./config'),
-    vmMap = {},
-    vmNameSet = [];
+    VMS = {};
 
 /**
  * Create VM component function that exposed to the user
  * return first VM instance
  */
-function component(options) {
+function component(opt) {
 
     // throws error if options is invalid
-    checkOptions(options);
+    checkOption(opt);
 
-    return createVmInstances(options);
-}
-
-/**
- * Query VM instance Array By component name
- */
-function queryVm(cmpName) {
-
-    return vmMap[cmpName];
+    return instantiateVM(opt);
 }
 
 /**
  * Check if the component's option is legal
  */
-function checkOptions(options) {
+function checkOption(opt) {
 
-    var pro;
+    checkName(opt);
 
-    if (!options.name && !options.name.trim().length) {
+    checkConflict(opt);
+
+    checkDefined(opt);
+}
+
+/**
+ * check tag whether indicated
+ */
+function checkName(opt) {
+
+    if (!opt.name || !opt.name.trim().length || opt.name.toUpperCase() === CONF.CMP_TAGNAME) {
         error.throw(error.optionInvalid);
     }
+}
 
-    if (options.data && options.methods) {
-        for (pro in options.data) {
-            if (options.methods[pro]) {
+/**
+ * check conflict between data and method
+ */
+function checkConflict(opt) {
+
+    if (opt.data && opt.method) {
+        for (var pro in opt.data) {
+            if (opt.method[pro]) {
                 error.throw(error.methodConflict, pro);
             }
         }
     }
+}
 
-    // check VM component whether define multiple
-    // only when VM vomponent was instanced
-    if (vmNameSet.indexOf(options.name) !== -1) {
-        error.throw(error.cmpConflict, options.name);
+/**
+ * check VM component whether define multiple
+ * only when VM vomponent was instanced
+ */
+function checkDefined(opt) {
+
+    if (VMS[opt.name]) {
+        error.throw(error.cmpConflict, opt.name);
     }
-    vmNameSet.push(options.name);
 }
 
 /**
@@ -58,31 +69,35 @@ function checkOptions(options) {
  * and create VM instances
  * return the first VM instance
  */
-function createVmInstances(options) {
+function instantiateVM(opt) {
 
-    var eles = document.querySelectorAll(config.prefix + options.name),
+    var eles = document.querySelectorAll(opt.name),
         i = eles.length,
-        firstVM, vm;
+        vm, ref;
 
     while (i--) {
-        vm = new ViewModel(options, eles[i]);
-        putVmMap(vm, eles[i], options);
+        ref = ViewModel.getRef(eles[i]);
 
-        firstVM = firstVM ? firstVM : vm;
+        vm = new ViewModel(opt, eles[i]);
+
+        addRef(vm, ref, opt);
     }
 
-    return firstVM;
+    return vm;
 }
 
 /**
  * Put vm with reference inio vm map 
  */
-function putVmMap(vm, element, options) {
+function addRef(vm, ref, opt) {
 
-    var ref = ViewModel.getReference(element),
-        refMap = vmMap[options.name];
+    var refMap = VMS[opt.name];
+
+    if (!refMap) {
+        refMap = VMS[opt.name] = {};
+    }
+
     if (ref) {
-        refMap = refMap ? refMap : [];
         refMap[ref] = vm;
     }
 }
@@ -91,5 +106,5 @@ module.exports = {
 
     component: component,
 
-    $: queryVm
+    $: VMS
 };

@@ -21,7 +21,7 @@ module.exports = function (grunt) {
 
         fs.src('./component.json')
             .pipe(component.scripts({
-                standalone: 'ocean',
+                standalone: 'oceanjs',
                 name: 'ocean'
             }))
             .pipe(map(header))

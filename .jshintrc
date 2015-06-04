@@ -21,6 +21,6 @@
   "devel": true,
   "jquery": true,
   "node": true,
-  "predef": ["ocean"],
+  "predef": ["oceanjs"],
   "white": false
 }

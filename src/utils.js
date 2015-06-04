@@ -1,6 +1,6 @@
 'use strict';
 
-var config = require('./config'),
+var CONF = require('./config'),
     def = Object.defineProperty,
     pub = module.exports = {
 
@@ -9,7 +9,7 @@ var config = require('./config'),
          */
         log: function () {
 
-            if (config.debug) {
+            if (CONF.DEBUG) {
                 console.log.apply(console, pub.object2Array(arguments));
             }
         },
@@ -29,6 +29,7 @@ var config = require('./config'),
          *  or for...in loops.
          */
         defProtected: function (obj, key, val, enumerable, writable) {
+
             def(obj, key, {
                 value: val,
                 enumerable: enumerable,
@@ -58,5 +59,21 @@ var config = require('./config'),
         isArray: function (obj) {
 
             return Array.isArray(obj);
+        },
+
+        /**
+         * copy a new element
+         */
+        copyElement: function (ele, newEle) {
+
+            if (ele.innerHTML) {
+                newEle.innerHTML = ele.innerHTML;
+            }
+            if (ele.id) {
+                newEle.id = ele.id;
+            }
+            if (ele.className) {
+                newEle.className = ele.className;
+            }
         }
     };

@@ -1,6 +1,11 @@
 'use strict';
 
 module.exports = {
-    prefix: 'o-',
-    debug: true
+    PREFIX: 'o-',
+    DEBUG: true,
+    CMP_TAGNAME: 'SECTION',
+    CMP_COMMENT: 'component',
+    DIRECTIVE: {
+        REF: 'ref'
+    }
 };

@@ -1,262 +1,103 @@
 'use strict';
 
-var Emitter = require('./emitter'),
-    utils = require('./utils'),
-    def = Object.defineProperty,
-    defProtected = utils.defProtected,
-    protoAccessor = '__proto__',
-    log = utils.log;
+var slice = [].slice;
 
-/**
- * Observer class
- */
-function Observer(compiler) {
-
-    this.observer = new Emitter();
-    this.compiler = compiler;
-
-    this.observer
-        .on('set', function (key, value) {
-
-            log('set', key, value);
-        }).on('mutate', function (key, value, mutation) {
-
-            log('mutate', key, value, mutation);
-        });
-
-    this.observe(compiler.data, '', this.observer);
+function Observer(ctx) {
+    this._ctx = ctx || this;
 }
 
 var ObserverProto = Observer.prototype;
 
-/**
- *  Convert an Object/Array to give it a change emitter.
- */
-ObserverProto.convert = function (obj) {
-
-    defProtected(obj, '__emitter__', new Emitter());
-    defProtected(obj, '__values__', utils.hashMap());
+ObserverProto.on = function (event, fn) {
+    this._cbs = this._cbs || {};
+    (this._cbs[event] = this._cbs[event] || [])
+    .push(fn);
+    return this;
 };
 
-/**
- *  Define accessors for a property on an Object
- *  so it emits get/set events.
- *  Then watch the value itself.
- */
-ObserverProto.convertKey = function (obj, key) {
+ObserverProto.once = function (event, fn) {
+    var self = this;
+    this._cbs = this._cbs || {};
 
-    log('convertKey', obj, key);
-
-    // skip over internal attrs
-    var keyPrefix = key.charAt(0);
-    if (keyPrefix === '$' || keyPrefix === '_') {
-        return;
+    function on() {
+        /*jshint validthis:true */
+        self.off(event, on);
+        fn.apply(this, arguments);
     }
 
-    var self = this,
-        values = obj.__values__,
-        emitter = obj.__emitter__;
-
-    init(obj[key]);
-
-    // define prop set/get
-    def(obj, key, {
-        enumerable: true,
-        configurable: true,
-        set: function (value) {
-
-            emitter.emit('set', key, value);
-            init(value);
-        },
-        get: function () {
-
-            return values[key];
-        }
-    });
-
-    function init(value) {
-
-        self.observe(value, key, emitter);
-        values[key] = value;
-    }
+    on.fn = fn;
+    this.on(event, on);
+    return this;
 };
 
-/**
- * Check if a value needed observe
- */
-ObserverProto.need2Observe = function (obj) {
+ObserverProto.off = function (event, fn) {
+    this._cbs = this._cbs || {};
 
-    return typeof obj === 'object';
-};
-
-// The proxy prototype to replace the __proto__ of
-// an observed array
-var ArrayProxy = Object.create(Array.prototype);
-
-initArrayProxy();
-
-// intercept mutation methods
-function initArrayProxy() {
-
-    [
-        'push',
-        'pop',
-        'shift',
-        'unshift',
-        'splice',
-        'sort',
-        'reverse'
-    ].forEach(function (method) {
-
-        // define array prototype method to array proxy
-        utils.defProtected(ArrayProxy, method, function () {
-
-            var args = [].slice.call(arguments),
-                result = Array.prototype[method].apply(this, args),
-                inserted, removed;
-
-            if (method === 'push' || method === 'unshift') {
-                inserted = args;
-            } else if (method === 'pop' || method === 'shift') {
-                removed = [result];
-            } else if (method === 'splice') {
-                inserted = args.slice(2);
-                removed = result;
-            }
-
-            // emit the mutation event
-            this.__emitter__.emit('mutate', '', this, {
-                method: method,
-                args: args,
-                result: result,
-                inserted: inserted,
-                removed: removed
-            });
-
-            // handle inserted and removed items
-            // refreshProxy(this);
-
-            return result;
-        });
-
-        function refreshProxy(arr) {
-
-            var i = arr.length;
-
-            log('refreshProxy', arr);
-            while (i--) {
-                var item = arr[i];
-                // item.__proxies__.
-            }
-        }
-    });
-}
-
-
-/**
- * Observe array recursively
- */
-ObserverProto.observeArray = function (arr) {
-
-    log('observeArray', arr);
-
-    var i = arr.length;
-
-    // add array proxy
-    convertArray(arr);
-
-    while (i--) {
-        this.convertKey(arr, i + '');
+    // all
+    if (!arguments.length) {
+        this._cbs = {};
+        return this;
     }
 
-    // inheritance array proxy
-    // for listening array mutate
-    function convertArray(arr) {
-
-        arr[protoAccessor] = ArrayProxy;
+    // specific event
+    var callbacks = this._cbs[event];
+    if (!callbacks) {
+        return this;
     }
-};
 
-/**
- * Observe obj recursively
- */
-ObserverProto.observeObject = function (obj) {
+    // remove all handlers
+    if (arguments.length === 1) {
+        delete this._cbs[event];
+        return this;
+    }
 
-    log('observeObject', obj);
-
-    for (var key in obj) {
-        if (obj.hasOwnProperty(key)) {
-            this.convertKey(obj, key);
+    // remove specific handler
+    var cb;
+    for (var i = 0; i < callbacks.length; i++) {
+        cb = callbacks[i];
+        if (cb === fn || cb.fn === fn) {
+            callbacks.splice(i, 1);
+            break;
         }
     }
+    return this;
 };
 
 /**
- * Observe obj's props according prop's type
+ *  The internal, faster emit with fixed amount of arguments
+ *  using Function.call
  */
-ObserverProto.observeProps = function (obj) {
+ObserverProto.emit = function (event, a, b, c) {
+    this._cbs = this._cbs || {};
+    var callbacks = this._cbs[event];
 
-    if (utils.isArray(obj)) {
-        this.observeArray(obj);
-    } else {
-        this.observeObject(obj);
+    if (callbacks) {
+        callbacks = callbacks.slice(0);
+        for (var i = 0, len = callbacks.length; i < len; i++) {
+            callbacks[i].call(this._ctx, a, b, c);
+        }
     }
+
+    return this;
 };
 
 /**
- *  Observe an object with a given path,
- *  and proxy get/set/mutate events to the provided observer.
+ *  The external emit using Function.apply
  */
-ObserverProto.observe = function (obj, rawPath, observer) {
+ObserverProto.applyEmit = function (event) {
+    this._cbs = this._cbs || {};
+    var callbacks = this._cbs[event],
+        args;
 
-    log('observe', obj, rawPath, observer);
-
-    if (!this.need2Observe(obj)) {
-        return;
+    if (callbacks) {
+        callbacks = callbacks.slice(0);
+        args = slice.call(arguments, 1);
+        for (var i = 0, len = callbacks.length; i < len; i++) {
+            callbacks[i].apply(this._ctx, args);
+        }
     }
 
-    this.convert(obj);
-
-    // setup proxies props
-    // for finding data full path
-    // change array path arr[0] to arr.0
-    var path = rawPath ? rawPath + '.' : '',
-        emitter = obj.__emitter__,
-        proxy = obj.__proxy__ = {
-            set: function (key, value) {
-
-                observer.emit('set', path + key, value);
-            },
-            get: function () {
-
-                log('proxy get');
-            },
-            mutate: function (key, value, mutation) {
-
-                log(key, value, mutation);
-                var fixedPath = key ? path + key : rawPath,
-                    m = mutation.method;
-
-                observer.emit('mutate', fixedPath, value, mutation);
-
-                // also emit set for Array's length when it mutates
-                if (!mutation.emitLength && m !== 'sort' && m !== 'reverse') {
-                    // fixed vue's multi-emitting problem 
-                    mutation.emitLength = true;
-                    observer.emit('set', fixedPath + '.length', value.length);
-                }
-            }
-        };
-
-    // emit set/get event to father emitter
-    // through obj proxy
-    emitter
-        .on('set', proxy.set)
-        .on('get', proxy.get)
-        .on('mutate', proxy.mutate);
-
-    // convert obj's props
-    this.observeProps(obj);
+    return this;
 };
 
 module.exports = Observer;

@@ -1,0 +1,19 @@
+{
+    "name": "oceanjs",
+    "version": "0.2.0",
+    "main": "src/main.js",
+    "author": "Aaron Peng <aaron61591@gmail.com>",
+    "description": "Simple, Fast & Composable MVVM for building interative interfaces",
+    "keywords": ["mvvm", "framework", "data binding"],
+    "license": "MIT",
+    "scripts": [
+        "src/main.js",
+        "src/viewmodel.js",
+        "src/compiler.js",
+        "src/monitor.js",
+        "src/observer.js",
+        "src/config.js",
+        "src/utils.js",
+        "src/error.js"
+    ]
+}
