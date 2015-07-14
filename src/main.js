@@ -106,5 +106,8 @@ module.exports = {
 
     component: component,
 
-    $: VMS
+    $: function (name) {
+
+        return VMS[name];
+    }
 };

@@ -7,5 +7,7 @@ module.exports = {
     CMP_COMMENT: 'component',
     DIRECTIVE: {
         REF: 'ref'
-    }
+    },
+    DIRECTIVE_SEPARATOR1: ';',
+    DIRECTIVE_SEPARATOR2: ':'
 };

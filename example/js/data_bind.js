@@ -3,13 +3,9 @@
 oceanjs.component({
     name: 'bind',
     data: {
-        a: 1,
-        b: 2,
-        // c: {
-        //     arr: ['t1', 't2', {
-        //         test: 'test'
-        //     }]
-        // }
+        // a: 1,
+        // b: 2,
+        c: [1, 2]
     },
     methods: {
         add: function (a, b) {

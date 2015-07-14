@@ -59,7 +59,6 @@ function initArrayProxy() {
 
             case 'push':
                 MonitorProto.convertKey(this, this.length - 1 + '');
-                console.log('push', this, this.length - 1 + '');
                 break;
             }
 
@@ -74,7 +73,7 @@ function initArrayProxy() {
             }
 
             // emit the mutation event
-            this.__observer__.emit('mutate', '', this, {
+            this.__monitor__.emit('mutate', '', this, {
                 method: method,
                 args: args,
                 result: result,
@@ -88,17 +87,17 @@ function initArrayProxy() {
             return result;
         });
 
-        function refreshProxy(arr) {
+        // function refreshProxy(arr) {
 
-            var i = arr.length;
+        //     var i = arr.length;
 
-            log('refreshProxy', arr);
+        //     log('refreshProxy', arr);
 
-            while (i--) {
-                var item = arr[i];
-                // item.__proxies__.
-            }
-        }
+        //     while (i--) {
+        //         var item = arr[i];
+        //         // item.__proxies__.
+        //     }
+        // }
     });
 }
 
@@ -115,7 +114,7 @@ MonitorProto.need2Monitor = function (obj) {
  */
 MonitorProto.convert = function (obj) {
 
-    defProtected(obj, '__observer__', new Observer());
+    defProtected(obj, '__monitor__', new Observer());
     defProtected(obj, '__values__', utils.hashMap());
 };
 
@@ -137,7 +136,7 @@ MonitorProto.monitor = function (obj, rawPath, observer) {
     // for finding data full path
     // change array path arr[0] to arr.0
     var path = rawPath ? rawPath + '.' : '',
-        proxy = obj.__proxy__ = {
+        proxy = {
             set: function (key, value) {
 
                 observer.emit('set', path + key, value);
@@ -164,7 +163,7 @@ MonitorProto.monitor = function (obj, rawPath, observer) {
 
     // emit set/get event to father observer
     // through obj proxy
-    obj.__observer__
+    obj.__monitor__
         .on('set', proxy.set)
         .on('get', proxy.get)
         .on('mutate', proxy.mutate);
@@ -240,7 +239,7 @@ MonitorProto.convertKey = function (obj, key) {
 
     var self = this,
         values = obj.__values__,
-        observer = obj.__observer__;
+        observer = obj.__monitor__;
 
     init(obj[key]);
 

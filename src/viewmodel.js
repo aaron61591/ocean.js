@@ -41,4 +41,9 @@ ViewModel.getRef = function (ele) {
     return ele.getAttribute(CONF.PREFIX + CONF.DIRECTIVE.REF);
 };
 
+/**
+ * viewmodel directive
+ */
+VMProto.directive = require('./directive');
+
 module.exports = ViewModel;

@@ -45,11 +45,13 @@ var CONF = require('./config'),
 
             var args = [],
                 prop;
+
             for (prop in obj) {
                 if (obj.hasOwnProperty(prop)) {
                     args.push(obj[prop]);
                 }
             }
+
             return args;
         },
 
@@ -66,14 +68,46 @@ var CONF = require('./config'),
          */
         copyElement: function (ele, newEle) {
 
+            var i = 0;
+
+            while (i < ele.attributes.length) {
+                newEle.setAttribute(ele.attributes[i].name, ele.getAttribute(ele.attributes[i].name));
+                ++i;
+            }
+
             if (ele.innerHTML) {
                 newEle.innerHTML = ele.innerHTML;
             }
-            if (ele.id) {
-                newEle.id = ele.id;
+        },
+
+        /**
+         * check nodeType whether element
+         */
+        isElement: function (node) {
+
+            return node.nodeType === 1;
+        },
+
+        /**
+         * check attribute whether directive
+         */
+        isDirective: function (attr) {
+
+            if (attr.indexOf(CONF.PREFIX) === 0) {
+                return attr.slice(CONF.PREFIX);
             }
-            if (ele.className) {
-                newEle.className = ele.className;
+        },
+
+        /**
+         * object extends
+         */
+        extends: function (son, father) {
+
+            for (var p in father) {
+                if (father.hasOwnProperty(p)) {
+                    son[p] = father[p];
+                }
             }
+            return son;
         }
     };

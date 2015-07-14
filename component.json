@@ -11,9 +11,12 @@
         "src/viewmodel.js",
         "src/compiler.js",
         "src/monitor.js",
+        "src/directive.js",
+        "src/binding.js",
         "src/observer.js",
         "src/config.js",
         "src/utils.js",
-        "src/error.js"
+        "src/error.js",
+        "src/directive/value.js"
     ]
 }
